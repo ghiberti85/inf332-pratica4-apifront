@@ -3,19 +3,22 @@
 import React, { useState, useEffect, ChangeEvent } from "react";
 import axios from "axios";
 import Modal from "react-modal";
-import "./App.css"; // Add a CSS file for custom styles
+import "./App.css";
 
 // Define Job Type
 interface Job {
   id: number;
   title: string;
-  company: string;
+  company_name: string;
   location: string;
-  skills: string[];
+  required_skills: string[];
   expertise: string;
+  job_type: string[];
+  level: string;
   description?: string;
   salary?: string;
-  postedDate?: string;
+  published_date?: string;
+  url?: string;
 }
 
 // Define Filters Type
@@ -24,42 +27,48 @@ interface Filters {
   expertise: string;
 }
 
-const API_BASE_URL = "https://app.swaggerhub.com/apis/inf332-grupo01-final/VagaGO-API/1.0.0";
+const API_BASE_URL = "http://localhost:8000";
 
 // Mock Data
 const MOCK_JOBS: Job[] = [
   {
     id: 1,
     title: "Frontend Developer",
-    company: "TechCorp",
+    company_name: "TechCorp",
     location: "Remote",
-    skills: ["React", "JavaScript", "CSS"],
+    required_skills: ["React", "JavaScript", "CSS"],
     expertise: "Mid",
     description: "Develop user interfaces for modern web applications.",
     salary: "$70,000 - $90,000",
-    postedDate: "2023-01-15",
+    published_date: "2023-01-15",
+    job_type: [],
+    level: ""
   },
   {
     id: 2,
     title: "Backend Developer",
-    company: "CodeBase",
+    company_name: "CodeBase",
     location: "New York",
-    skills: ["Node.js", "MongoDB", "Express"],
+    required_skills: ["Node.js", "MongoDB", "Express"],
     expertise: "Senior",
     description: "Implement and maintain backend systems.",
     salary: "$90,000 - $120,000",
-    postedDate: "2023-01-20",
+    published_date: "2023-01-20",
+    job_type: [],
+    level: ""
   },
   {
     id: 3,
     title: "UI/UX Designer",
-    company: "DesignHub",
+    company_name: "DesignHub",
     location: "San Francisco",
-    skills: ["Figma", "Adobe XD", "Sketch"],
+    required_skills: ["Figma", "Adobe XD", "Sketch"],
     expertise: "Junior",
     description: "Create intuitive designs for applications.",
     salary: "$60,000 - $80,000",
-    postedDate: "2023-01-25",
+    published_date: "2023-01-25",
+    job_type: [],
+    level: ""
   },
 ];
 
@@ -109,7 +118,7 @@ const App: React.FC = () => {
 
   // Filter jobs
   const filteredJobs = jobs.filter((job) => {
-    const skillsMatch = job.skills.join(" ").toLowerCase().includes(filters.skills.toLowerCase());
+    const skillsMatch = job.required_skills.join(" ").toLowerCase().includes(filters.skills.toLowerCase());
     const expertiseMatch = filters.expertise ? job.expertise === filters.expertise : true;
     return skillsMatch && expertiseMatch;
   });
@@ -157,9 +166,9 @@ const App: React.FC = () => {
         {filteredJobs.map((job) => (
           <div key={job.id} className="job-card" onClick={() => openModal(job)}>
             <h2 className="job-title">{job.title}</h2>
-            <p className="job-info"><strong>Company:</strong> {job.company}</p>
+            <p className="job-info"><strong>Company:</strong> {job.company_name}</p>
             <p className="job-info"><strong>Location:</strong> {job.location}</p>
-            <p className="job-info"><strong>Skills:</strong> {job.skills.join(", ")}</p>
+            <p className="job-info"><strong>Skills:</strong> {job.required_skills.join(", ")}</p>
             <p className="job-info"><strong>Expertise:</strong> {job.expertise}</p>
           </div>
         ))}
@@ -170,13 +179,13 @@ const App: React.FC = () => {
       {selectedJob && (
         <Modal isOpen={isModalOpen} onRequestClose={closeModal} contentLabel="Job Details">
           <h2>{selectedJob.title}</h2>
-          <p><strong>Company:</strong> {selectedJob.company}</p>
+          <p><strong>Company:</strong> {selectedJob.company_name}</p>
           <p><strong>Location:</strong> {selectedJob.location}</p>
-          <p><strong>Skills:</strong> {selectedJob.skills.join(", ")}</p>
+          <p><strong>Skills:</strong> {selectedJob.required_skills.join(", ")}</p>
           <p><strong>Expertise:</strong> {selectedJob.expertise}</p>
           <p><strong>Description:</strong> {selectedJob.description}</p>
           <p><strong>Salary:</strong> {selectedJob.salary}</p>
-          <p><strong>Posted Date:</strong> {selectedJob.postedDate}</p>
+          <p><strong>Posted Date:</strong> {selectedJob.published_date}</p>
           <button onClick={closeModal}>Close</button>
         </Modal>
       )}
