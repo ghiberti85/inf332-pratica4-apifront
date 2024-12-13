@@ -1,85 +1,47 @@
-// Frontend React Application for VagaGO using TypeScript
-
 import React, { useState, useEffect, ChangeEvent } from "react";
 import axios from "axios";
 import Modal from "react-modal";
 import "./App.css";
 
-// Define Job Type
 interface Job {
   id: number;
   title: string;
   company_name: string;
   location: string;
   required_skills: string[];
-  expertise: string;
-  job_type: string[];
   level: string;
+  job_type: string[];
   description?: string;
   salary?: string;
   published_date?: string;
   url?: string;
 }
 
-// Define Filters Type
 interface Filters {
   skills: string;
-  expertise: string;
+  level: string;
 }
 
 const API_BASE_URL = "http://localhost:8000";
 
-// Mock Data
 const MOCK_JOBS: Job[] = [
-  {
-    id: 1,
-    title: "Frontend Developer",
-    company_name: "TechCorp",
-    location: "Remote",
-    required_skills: ["React", "JavaScript", "CSS"],
-    expertise: "Mid",
-    description: "Develop user interfaces for modern web applications.",
-    salary: "$70,000 - $90,000",
-    published_date: "2023-01-15",
-    job_type: [],
-    level: ""
-  },
-  {
-    id: 2,
-    title: "Backend Developer",
-    company_name: "CodeBase",
-    location: "New York",
-    required_skills: ["Node.js", "MongoDB", "Express"],
-    expertise: "Senior",
-    description: "Implement and maintain backend systems.",
-    salary: "$90,000 - $120,000",
-    published_date: "2023-01-20",
-    job_type: [],
-    level: ""
-  },
-  {
-    id: 3,
-    title: "UI/UX Designer",
-    company_name: "DesignHub",
-    location: "San Francisco",
-    required_skills: ["Figma", "Adobe XD", "Sketch"],
-    expertise: "Junior",
-    description: "Create intuitive designs for applications.",
-    salary: "$60,000 - $80,000",
-    published_date: "2023-01-25",
-    job_type: [],
-    level: ""
-  },
+  // Your mock data here
 ];
+
+// Map for expertise level synonyms
+const LEVEL_SYNONYMS: Record<string, string[]> = {
+  "Junior": ["Junior", "Júnior", "junio", "jr"],
+  "Mid": ["Mid", "Mid Level", "Pleno"],
+  "Senior": ["Senior", "Sênior", "Sr"]
+};
 
 const App: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [filters, setFilters] = useState<Filters>({ skills: "", expertise: "" });
+  const [filters, setFilters] = useState<Filters>({ skills: "", level: "" });
   const [useMockData, setUseMockData] = useState<boolean>(false);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
-  // Fetch jobs from API or use mock data
   const fetchJobs = async () => {
     if (useMockData) {
       setJobs(MOCK_JOBS);
@@ -98,28 +60,33 @@ const App: React.FC = () => {
     fetchJobs();
   }, [useMockData]);
 
-  // Handle filter change
   const handleFilterChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFilters({ ...filters, [name]: value });
   };
 
-  // Open modal with job details
   const openModal = (job: Job) => {
     setSelectedJob(job);
     setIsModalOpen(true);
   };
 
-  // Close modal
   const closeModal = () => {
     setSelectedJob(null);
     setIsModalOpen(false);
   };
 
-  // Filter jobs
   const filteredJobs = jobs.filter((job) => {
-    const skillsMatch = job.required_skills.join(" ").toLowerCase().includes(filters.skills.toLowerCase());
-    const expertiseMatch = filters.expertise ? job.expertise === filters.expertise : true;
+    const skillsMatch = job.required_skills
+      .join(" ")
+      .toLowerCase()
+      .includes(filters.skills.toLowerCase());
+
+    const expertiseMatch = filters.level
+      ? LEVEL_SYNONYMS[filters.level]?.some((synonym) =>
+          job.level.toLowerCase().includes(synonym.toLowerCase())
+        )
+      : true;
+
     return skillsMatch && expertiseMatch;
   });
 
@@ -150,8 +117,8 @@ const App: React.FC = () => {
           className="input"
         />
         <select
-          name="expertise"
-          value={filters.expertise}
+          name="level"
+          value={filters.level}
           onChange={handleFilterChange}
           className="select"
         >
@@ -169,7 +136,7 @@ const App: React.FC = () => {
             <p className="job-info"><strong>Company:</strong> {job.company_name}</p>
             <p className="job-info"><strong>Location:</strong> {job.location}</p>
             <p className="job-info"><strong>Skills:</strong> {job.required_skills.join(", ")}</p>
-            <p className="job-info"><strong>Expertise:</strong> {job.expertise}</p>
+            <p className="job-info"><strong>Level:</strong> {job.level}</p>
           </div>
         ))}
       </div>
@@ -182,7 +149,7 @@ const App: React.FC = () => {
           <p><strong>Company:</strong> {selectedJob.company_name}</p>
           <p><strong>Location:</strong> {selectedJob.location}</p>
           <p><strong>Skills:</strong> {selectedJob.required_skills.join(", ")}</p>
-          <p><strong>Expertise:</strong> {selectedJob.expertise}</p>
+          <p><strong>Level:</strong> {selectedJob.level}</p>
           <p><strong>Description:</strong> {selectedJob.description}</p>
           <p><strong>Salary:</strong> {selectedJob.salary}</p>
           <p><strong>Posted Date:</strong> {selectedJob.published_date}</p>
