@@ -4,6 +4,7 @@ import React, { useState, useEffect, ChangeEvent } from "react";
 import axios from "axios";
 import Modal from "react-modal";
 import "./App.css";
+import loadingGif from "./assets/loading.gif";
 
 // Define Job Type
 interface Job {
@@ -25,6 +26,8 @@ interface Job {
 interface Filters {
   skills: string;
   expertise: string;
+  location: string;
+  title: string;
 }
 
 const API_BASE_URL = "http://localhost:8000";
@@ -75,12 +78,17 @@ const MOCK_JOBS: Job[] = [
   },
 ];
 
+const truncateText = (text: string, maxLength: number): string => {
+  return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+};
+
 const App: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [filters, setFilters] = useState<Filters>({ skills: "", expertise: "" });
+  const [filters, setFilters] = useState<Filters>({ skills: "", expertise: "", location: "", title: "" });
   const [useMockData, setUseMockData] = useState<boolean>(false);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const expertiseAliases: Record<string, string[]> = {
     Beginner: ["Beginner", "Junior", "Júnior", "junio", "jr"],
@@ -90,21 +98,27 @@ const App: React.FC = () => {
 
   // Fetch jobs from API or use mock data
   const fetchJobs = async () => {
-    if (useMockData) {
-      setJobs(MOCK_JOBS);
-      return;
-    }
-
+    setIsLoading(true);
     try {
-      const response = await axios.get<Job[]>(`${API_BASE_URL}/jobs`);
-      setJobs(response.data);
+      if (useMockData) {
+        setJobs(MOCK_JOBS);
+      } else {
+        const response = await axios.get<Job[]>(`${API_BASE_URL}/jobs`);
+        setJobs(response.data);
+      }
     } catch (error) {
       console.error("Error fetching jobs:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchJobs();
+    if (useMockData) {
+      setJobs(MOCK_JOBS);
+    } else {
+      fetchJobs();
+    }
   }, [useMockData]);
 
   // Handle filter change
@@ -136,10 +150,14 @@ const App: React.FC = () => {
   const filteredJobs = jobs.filter((job) => {
     const skillsMatch = job.required_skills.join(" ").toLowerCase().includes(filters.skills.toLowerCase());
     const expertiseMatch = filters.expertise
-      ? expertiseAliases[filters.expertise]?.some((alias) => job.level.toLowerCase().includes(alias.toLowerCase()))
+      ? expertiseAliases[filters.expertise]?.some((alias) => job.level?.toLowerCase().includes(alias.toLowerCase()))
       : true;
-    return skillsMatch && expertiseMatch;
+    const locationMatch = job.location?.toString().toLowerCase().includes(filters.location.toLowerCase());
+    const titleMatch = job.title?.toString().toLowerCase().includes(filters.title.toLowerCase());
+    return skillsMatch && expertiseMatch && locationMatch && titleMatch;
   });
+  
+  
 
   return (
     <div className="app-container">
@@ -152,7 +170,12 @@ const App: React.FC = () => {
           <input
             type="checkbox"
             checked={useMockData}
-            onChange={() => setUseMockData(!useMockData)}
+            onChange={() => {
+              setUseMockData(!useMockData);
+              if (!useMockData) {
+                setJobs([]);
+              }
+            }}
           />
           <span>Use Mock Data</span>
         </label>
@@ -164,6 +187,22 @@ const App: React.FC = () => {
           name="skills"
           placeholder="Filter by skills"
           value={filters.skills}
+          onChange={handleFilterChange}
+          className="input"
+        />
+        <input
+          type="text"
+          name="location"
+          placeholder="Filter by location"
+          value={filters.location}
+          onChange={handleFilterChange}
+          className="input"
+        />
+        <input
+          type="text"
+          name="title"
+          placeholder="Filter by title"
+          value={filters.title}
           onChange={handleFilterChange}
           className="input"
         />
@@ -180,19 +219,25 @@ const App: React.FC = () => {
         </select>
       </div>
 
+      {isLoading && (
+        <div className="loading-container">
+          <img src={loadingGif} alt="Loading..." style={{ width: "100px", height: "100px" }} />
+        </div>
+      )}
+
       <div className="jobs-grid">
         {filteredJobs.map((job) => (
           <div key={job.id} className="job-card" onClick={() => openModal(job)}>
             <h2 className="job-title">{job.title}</h2>
             <p className="job-info"><strong>Company:</strong> {job.company_name}</p>
             <p className="job-info"><strong>Location:</strong> {job.location}</p>
-            <p className="job-info"><strong>Skills:</strong> {job.required_skills.join(", ")}</p>
+            <p className="job-info"><strong>Skills:</strong> {truncateText(job.required_skills.join(", "), 300)}</p>
             <p className="job-info"><strong>Level:</strong> {job.level}</p>
           </div>
         ))}
       </div>
 
-      {filteredJobs.length === 0 && <p className="no-results">No jobs match the selected filters.</p>}
+      {filteredJobs.length === 0 && !isLoading && <p className="no-results">No jobs match the selected filters.</p>}
 
       {selectedJob && (
         <Modal isOpen={isModalOpen} onRequestClose={closeModal} contentLabel="Job Details">
@@ -206,7 +251,7 @@ const App: React.FC = () => {
           <p><strong>Salary:</strong> {selectedJob.salary}</p>
           <p><strong>Posted Date:</strong> {selectedJob.published_date ? formatDate(selectedJob.published_date) : "N/A"}</p>
           <p><strong>Link:</strong> <a href={selectedJob.url} target="_blank" rel="noopener noreferrer">View Job Posting</a></p>
-          <button onClick={closeModal} style={{ marginTop: "20px", display: "block", width: "15%" }}>Close</button>
+          <button onClick={closeModal} style={{ marginTop: "20px", display: "block", width: "100%" }}>Close</button>
         </Modal>
       )}
     </div>
