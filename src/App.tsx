@@ -11,7 +11,7 @@ interface Job {
   id: number;
   title: string;
   company_name: string;
-  location: string;
+  location: string[]; // Updated to reflect the correct type as an array
   required_skills: string[];
   expertise: string;
   job_type: string[];
@@ -38,7 +38,7 @@ const MOCK_JOBS: Job[] = [
     id: 1,
     title: "Frontend Developer",
     company_name: "TechCorp",
-    location: "Remote",
+    location: ["Remote"],
     required_skills: ["React", "JavaScript", "CSS"],
     expertise: "Mid",
     description: "Develop user interfaces for modern web applications.",
@@ -52,7 +52,7 @@ const MOCK_JOBS: Job[] = [
     id: 2,
     title: "Backend Developer",
     company_name: "CodeBase",
-    location: "New York",
+    location: ["New York"],
     required_skills: ["Node.js", "MongoDB", "Express"],
     expertise: "Senior",
     description: "Implement and maintain backend systems.",
@@ -66,7 +66,7 @@ const MOCK_JOBS: Job[] = [
     id: 3,
     title: "UI/UX Designer",
     company_name: "DesignHub",
-    location: "San Francisco",
+    location: ["San Francisco"],
     required_skills: ["Figma", "Adobe XD", "Sketch"],
     expertise: "Junior",
     description: "Create intuitive designs for applications.",
@@ -152,12 +152,12 @@ const App: React.FC = () => {
     const expertiseMatch = filters.expertise
       ? expertiseAliases[filters.expertise]?.some((alias) => job.level?.toLowerCase().includes(alias.toLowerCase()))
       : true;
-    const locationMatch = job.location?.toString().toLowerCase().includes(filters.location.toLowerCase());
-    const titleMatch = job.title?.toString().toLowerCase().includes(filters.title.toLowerCase());
+    const locationMatch = Array.isArray(job.location)
+      ? job.location.join(", ").toLowerCase().includes(filters.location.toLowerCase())
+      : false;
+    const titleMatch = job.title?.toLowerCase().includes(filters.title.toLowerCase());
     return skillsMatch && expertiseMatch && locationMatch && titleMatch;
   });
-  
-  
 
   return (
     <div className="app-container">
@@ -231,8 +231,7 @@ const App: React.FC = () => {
             <h2 className="job-title">{job.title}</h2>
             <p className="job-info"><strong>Company:</strong> {job.company_name}</p>
             <p className="job-info">
-              <strong>Location:</strong>{" "}
-              {Array.isArray(job.location) ? job.location.join(", ") : "N/A"}
+              <strong>Location:</strong> {Array.isArray(job.location) ? job.location.join(", ") : "N/A"}
             </p>
             <p className="job-info"><strong>Skills:</strong> {truncateText(job.required_skills.join(", "), 300)}</p>
             <p className="job-info"><strong>Level:</strong> {job.level}</p>
@@ -240,14 +239,13 @@ const App: React.FC = () => {
         ))}
       </div>
 
-
       {filteredJobs.length === 0 && !isLoading && <p className="no-results">No jobs match the selected filters.</p>}
 
       {selectedJob && (
         <Modal isOpen={isModalOpen} onRequestClose={closeModal} contentLabel="Job Details">
           <h2>{selectedJob.title}</h2>
           <p><strong>Company:</strong> {selectedJob.company_name}</p>
-          <p><strong>Location:</strong> {selectedJob.location}</p>
+          <p><strong>Location:</strong> {Array.isArray(selectedJob.location) ? selectedJob.location.join(", ") : "N/A"}</p>
           <p><strong>Skills:</strong> {selectedJob.required_skills.join(", ")}</p>
           <p><strong>Level:</strong> {selectedJob.level}</p>
           <p><strong>Job Type:</strong> {selectedJob.job_type.join(", ")}</p>
