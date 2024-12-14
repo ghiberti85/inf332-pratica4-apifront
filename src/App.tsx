@@ -230,12 +230,16 @@ const App: React.FC = () => {
           <div key={job.id} className="job-card" onClick={() => openModal(job)}>
             <h2 className="job-title">{job.title}</h2>
             <p className="job-info"><strong>Company:</strong> {job.company_name}</p>
-            <p className="job-info"><strong>Location:</strong> {job.location}</p>
+            <p className="job-info">
+              <strong>Location:</strong>{" "}
+              {Array.isArray(job.location) ? job.location.join(", ") : "N/A"}
+            </p>
             <p className="job-info"><strong>Skills:</strong> {truncateText(job.required_skills.join(", "), 300)}</p>
             <p className="job-info"><strong>Level:</strong> {job.level}</p>
           </div>
         ))}
       </div>
+
 
       {filteredJobs.length === 0 && !isLoading && <p className="no-results">No jobs match the selected filters.</p>}
 
